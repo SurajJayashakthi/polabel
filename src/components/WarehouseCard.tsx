@@ -18,7 +18,7 @@ export function WarehouseCard({ request, onClick }: WarehouseCardProps) {
         const start = new Date(request.created_at).getTime();
         const update = () => {
             const now = Date.now();
-            setSecondsElapsed(Math.floor((now - start) / 1000));
+            setSecondsElapsed(Math.max(0, Math.floor((now - start) / 1000)));
         };
 
         update();

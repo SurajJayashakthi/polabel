@@ -14,11 +14,18 @@ export function WarehouseCard({ request, onClick }: WarehouseCardProps) {
     const [secondsElapsed, setSecondsElapsed] = useState(0);
 
     useEffect(() => {
-        // Calculate initial seconds based on created_at
         const start = new Date(request.created_at).getTime();
+        const nowAtMount = new Date().getTime();
+
+        // If the request is from the "future" (client clock behind server),
+        // we calculate an offset so it starts at 00:00:00 and counts up.
+        // Otherwise, we use the actual difference.
+        const driftOffset = start > nowAtMount ? (start - nowAtMount) : 0;
+        const adjustedStart = start - driftOffset;
+
         const update = () => {
-            const now = Date.now();
-            setSecondsElapsed(Math.max(0, Math.floor((now - start) / 1000)));
+            const now = new Date().getTime();
+            setSecondsElapsed(Math.floor((now - adjustedStart) / 1000));
         };
 
         update();
@@ -27,9 +34,10 @@ export function WarehouseCard({ request, onClick }: WarehouseCardProps) {
     }, [request.created_at]);
 
     const formatTime = (totalSeconds: number) => {
-        const hrs = Math.floor(totalSeconds / 3600);
-        const mins = Math.floor((totalSeconds % 3600) / 60);
-        const secs = totalSeconds % 60;
+        const positiveSeconds = Math.max(0, totalSeconds);
+        const hrs = Math.floor(positiveSeconds / 3600);
+        const mins = Math.floor((positiveSeconds % 3600) / 60);
+        const secs = positiveSeconds % 60;
         return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
 

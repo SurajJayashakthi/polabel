@@ -15,16 +15,16 @@ export function WarehouseCard({ request, onClick }: WarehouseCardProps) {
 
     useEffect(() => {
         const start = new Date(request.created_at).getTime();
-        const nowAtMount = new Date().getTime();
+        if (isNaN(start)) return;
 
-        // If the request is from the "future" (client clock behind server),
-        // we calculate an offset so it starts at 00:00:00 and counts up.
-        // Otherwise, we use the actual difference.
-        const driftOffset = start > nowAtMount ? (start - nowAtMount) : 0;
-        const adjustedStart = start - driftOffset;
+        const initialNow = Date.now();
+        // If the server timestamp is in the future (clock drift), 
+        // we compensate so the timer starts at 00:00:00 and counts up instantly.
+        const drift = start > initialNow ? (start - initialNow) : 0;
+        const adjustedStart = start - drift;
 
         const update = () => {
-            const now = new Date().getTime();
+            const now = Date.now();
             setSecondsElapsed(Math.floor((now - adjustedStart) / 1000));
         };
 
@@ -122,17 +122,32 @@ export function WarehouseCard({ request, onClick }: WarehouseCardProps) {
                 </div>
             </div>
 
-            <div style={{ marginBottom: '1rem' }}>
-                <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-secondary)', letterSpacing: '0.1em' }}>PO NUMBERS</label>
-                <div style={{
-                    marginTop: '0.5rem',
-                    padding: '1rem',
-                    background: 'rgba(0,0,0,0.2)',
-                    borderRadius: 'var(--radius-md)',
-                    border: '1px solid var(--border-color)'
-                }}>
-                    <p style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--text-primary)' }}>{request.po_numbers}</p>
-                </div>
+            <div style={{
+                marginBottom: '1.5rem',
+                height: '80px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'rgba(34, 197, 94, 0.05)',
+                borderRadius: 'var(--radius-md)',
+                border: '1px dashed rgba(34, 197, 94, 0.3)'
+            }}>
+                <motion.div
+                    animate={{ opacity: [0.4, 1, 0.4] }}
+                    transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.75rem',
+                        color: 'var(--accent-green)',
+                        fontWeight: 900,
+                        fontSize: '1.25rem',
+                        letterSpacing: '0.05em'
+                    }}
+                >
+                    <Package size={24} />
+                    PO PENDING
+                </motion.div>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.5rem' }}>
@@ -150,7 +165,7 @@ export function WarehouseCard({ request, onClick }: WarehouseCardProps) {
                     fontWeight: 700,
                     letterSpacing: '0.05em'
                 }}>
-                    CLICK TO VIEW DETAILS
+                    CLICK TO VIEW PO LIST
                 </div>
             </div>
         </motion.div>

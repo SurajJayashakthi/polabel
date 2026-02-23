@@ -37,6 +37,9 @@ export function WarehouseModal({ request, isOpen, onClose, onComplete }: Warehou
         onClose();
     };
 
+    const remainingPos = poList.filter(po => !selectedPos.includes(po));
+    const isPartial = selectedPos.length > 0 && selectedPos.length < poList.length;
+
     return (
         <AnimatePresence>
             {isOpen && (
@@ -128,7 +131,7 @@ export function WarehouseModal({ request, isOpen, onClose, onComplete }: Warehou
                             </div>
 
                             {/* Info Grid */}
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginBottom: '3rem' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginBottom: '2.5rem' }}>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                     <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.1em' }}>SUBMITTED AT</p>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontWeight: 600 }}>
@@ -145,18 +148,18 @@ export function WarehouseModal({ request, isOpen, onClose, onComplete }: Warehou
                                 </div>
                             </div>
 
-                            {/* PO List */}
-                            <div style={{ marginBottom: '3.5rem' }}>
-                                <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.1em', marginBottom: '1.25rem' }}>SELECT PO NUMBERS TO COMPLETE</p>
+                            {/* PO List Selection */}
+                            <div style={{ marginBottom: isPartial ? '1.5rem' : '2.5rem' }}>
+                                <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.1em', marginBottom: '1rem' }}>SELECT PO NUMBERS TO COMPLETE</p>
                                 <div style={{
                                     display: 'flex',
                                     flexDirection: 'column',
-                                    gap: '0.75rem',
-                                    backgroundColor: 'rgba(255,255,255,0.02)',
-                                    padding: '1.25rem',
+                                    gap: '0.5rem',
+                                    backgroundColor: 'rgba(255,255,255,0.01)',
+                                    padding: '1rem',
                                     borderRadius: 'var(--radius-md)',
                                     border: '1px solid var(--border-color)',
-                                    maxHeight: '200px',
+                                    maxHeight: '160px',
                                     overflowY: 'auto'
                                 }}>
                                     {poList.map((po, index) => {
@@ -170,32 +173,63 @@ export function WarehouseModal({ request, isOpen, onClose, onComplete }: Warehou
                                                     alignItems: 'center',
                                                     justifyContent: 'space-between',
                                                     gap: '1rem',
-                                                    padding: '0.75rem 1rem',
+                                                    padding: '0.6rem 0.8rem',
                                                     borderRadius: 'var(--radius-sm)',
-                                                    backgroundColor: isSelected ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
-                                                    border: `1px solid ${isSelected ? 'var(--accent-blue)' : 'transparent'}`,
+                                                    backgroundColor: isSelected ? 'rgba(59, 130, 246, 0.08)' : 'transparent',
+                                                    border: `1px solid ${isSelected ? 'rgba(59, 130, 246, 0.3)' : 'transparent'}`,
                                                     cursor: 'pointer',
-                                                    transition: 'all 0.2s ease'
+                                                    transition: 'all 0.15s ease'
                                                 }}
                                             >
-                                                <span style={{ fontSize: '1.125rem', fontWeight: 800, color: isSelected ? 'var(--text-primary)' : 'var(--text-secondary)' }}>{po}</span>
+                                                <span style={{ fontSize: '1rem', fontWeight: 700, color: isSelected ? 'var(--text-primary)' : 'var(--text-secondary)' }}>{po}</span>
                                                 <div style={{
-                                                    width: '24px',
-                                                    height: '24px',
-                                                    borderRadius: '6px',
+                                                    width: '20px',
+                                                    height: '20px',
+                                                    borderRadius: '4px',
                                                     border: `2px solid ${isSelected ? 'var(--accent-blue)' : 'var(--border-color)'}`,
                                                     backgroundColor: isSelected ? 'var(--accent-blue)' : 'transparent',
                                                     display: 'flex',
                                                     alignItems: 'center',
                                                     justifyContent: 'center'
                                                 }}>
-                                                    {isSelected && <CheckCircle size={16} color="white" />}
+                                                    {isSelected && <CheckCircle size={14} color="white" />}
                                                 </div>
                                             </div>
                                         );
                                     })}
                                 </div>
                             </div>
+
+                            {/* Confirmation Summary (Partial) */}
+                            {isPartial && (
+                                <div style={{
+                                    marginBottom: '2.5rem',
+                                    padding: '1.25rem',
+                                    backgroundColor: 'rgba(255,255,255,0.02)',
+                                    borderRadius: 'var(--radius-md)',
+                                    border: '1px solid var(--border-color)',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '0.75rem'
+                                }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                                        <p style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--accent-green)', letterSpacing: '0.05em' }}>COMPLETING NOW</p>
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                                            {selectedPos.map(po => (
+                                                <span key={po} style={{ fontSize: '0.75rem', fontWeight: 600, padding: '0.2rem 0.5rem', backgroundColor: 'rgba(34, 197, 94, 0.1)', borderRadius: '4px', border: '1px solid rgba(34, 197, 94, 0.2)' }}>{po}</span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                                        <p style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--accent-yellow)', letterSpacing: '0.05em' }}>REMAINING IN QUEUE</p>
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                                            {remainingPos.map(po => (
+                                                <span key={po} style={{ fontSize: '0.75rem', fontWeight: 600, padding: '0.2rem 0.5rem', backgroundColor: 'rgba(234, 179, 8, 0.1)', borderRadius: '4px', border: '1px solid rgba(234, 179, 8, 0.2)' }}>{po}</span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Action Button */}
                             <motion.button

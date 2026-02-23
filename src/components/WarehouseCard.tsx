@@ -8,9 +8,11 @@ import { motion } from 'framer-motion';
 interface WarehouseCardProps {
     request: PORequest;
     onClick: (request: PORequest) => void;
+    isSelected?: boolean;
+    onSelect?: (id: string) => void;
 }
 
-export function WarehouseCard({ request, onClick }: WarehouseCardProps) {
+export function WarehouseCard({ request, onClick, isSelected, onSelect }: WarehouseCardProps) {
     const [secondsElapsed, setSecondsElapsed] = useState(0);
 
     useEffect(() => {
@@ -43,6 +45,17 @@ export function WarehouseCard({ request, onClick }: WarehouseCardProps) {
 
     const isPending = request.status === 'pending';
 
+    const handleCardClick = (e: React.MouseEvent) => {
+        // If they click the selection area specifically or if they are in selection mode?
+        // Let's make the whole card clickable for modal, but add a specific selection button
+        onClick(request);
+    };
+
+    const handleSelectClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        onSelect?.(request.id);
+    };
+
     return (
         <motion.div
             layout
@@ -50,23 +63,51 @@ export function WarehouseCard({ request, onClick }: WarehouseCardProps) {
             animate={{
                 opacity: 1,
                 scale: 1,
-                backgroundColor: isPending ? 'rgba(239, 68, 68, 0.12)' : 'var(--bg-secondary)',
-                borderColor: isPending ? 'var(--accent-red)' : 'var(--border-color)'
+                backgroundColor: isSelected
+                    ? 'rgba(59, 130, 246, 0.15)'
+                    : (isPending ? 'rgba(239, 68, 68, 0.12)' : 'var(--bg-secondary)'),
+                borderColor: isSelected
+                    ? 'var(--accent-blue)'
+                    : (isPending ? 'var(--accent-red)' : 'var(--border-color)'),
+                boxShadow: isSelected
+                    ? '0 0 25px rgba(59, 130, 246, 0.2)'
+                    : (isPending ? '0 0 20px rgba(239, 68, 68, 0.15)' : 'var(--shadow-md)')
             }}
             whileHover={{ scale: 1.02, y: -5 }}
             transition={{ duration: 0.3 }}
-            onClick={() => onClick(request)}
-            className="card"
+            onClick={handleCardClick}
+            className={`card ${isSelected ? 'selected' : ''}`}
             style={{
                 padding: '2rem',
                 position: 'relative',
                 overflow: 'hidden',
-                borderWidth: isPending ? '3px' : '1px',
+                borderWidth: (isPending || isSelected) ? '3px' : '1px',
                 cursor: 'pointer',
-                boxShadow: isPending ? '0 0 20px rgba(239, 68, 68, 0.15)' : 'var(--shadow-md)'
             }}
         >
-            {isPending && (
+            {/* Selection Checkbox/Indicator */}
+            <div
+                onClick={handleSelectClick}
+                style={{
+                    position: 'absolute',
+                    top: '1.25rem',
+                    right: '1.25rem',
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '50%',
+                    border: `2px solid ${isSelected ? 'var(--accent-blue)' : 'var(--border-color)'}`,
+                    backgroundColor: isSelected ? 'var(--accent-blue)' : 'transparent',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 10,
+                    transition: 'all 0.2s ease'
+                }}
+            >
+                {isSelected && <CheckCircle size={20} color="white" />}
+            </div>
+
+            {isPending && !isSelected && (
                 <motion.div
                     animate={{ opacity: [0.6, 1, 0.6] }}
                     transition={{ repeat: Infinity, duration: 2 }}
@@ -82,7 +123,7 @@ export function WarehouseCard({ request, onClick }: WarehouseCardProps) {
                 />
             )}
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', paddingRight: '2rem' }}>
                 <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                     <div style={{
                         padding: '1rem',

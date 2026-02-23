@@ -1,5 +1,4 @@
-"use client";
-
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Clock, Calendar, FileText, CheckCircle, AlertTriangle } from 'lucide-react';
 import { PORequest } from '@/hooks/useRequests';
@@ -8,14 +7,35 @@ interface WarehouseModalProps {
     request: PORequest | null;
     isOpen: boolean;
     onClose: () => void;
-    onComplete: (id: string) => Promise<void>;
+    onComplete: (id: string, completedPos: string[]) => Promise<void>;
 }
 
 export function WarehouseModal({ request, isOpen, onClose, onComplete }: WarehouseModalProps) {
+    const [selectedPos, setSelectedPos] = useState<string[]>([]);
+
+    useEffect(() => {
+        if (request) {
+            const pos = request.po_numbers.split(/[\s,]+/).filter(Boolean);
+            setSelectedPos(pos); // Default select all
+        }
+    }, [request, isOpen]);
+
     if (!request) return null;
 
     const poList = request.po_numbers.split(/[\s,]+/).filter(Boolean);
     const createdDate = new Date(request.created_at);
+
+    const togglePo = (po: string) => {
+        setSelectedPos(prev =>
+            prev.includes(po) ? prev.filter(p => p !== po) : [...prev, po]
+        );
+    };
+
+    const handleConfirm = async () => {
+        if (selectedPos.length === 0) return;
+        await onComplete(request.id, selectedPos);
+        onClose();
+    };
 
     return (
         <AnimatePresence>
@@ -65,6 +85,9 @@ export function WarehouseModal({ request, isOpen, onClose, onComplete }: Warehou
                                 top: '1.5rem',
                                 right: '1.5rem',
                                 color: 'var(--text-secondary)',
+                                background: 'none',
+                                border: 'none',
+                                cursor: 'pointer',
                                 zIndex: 10
                             }}
                         >
@@ -124,35 +147,53 @@ export function WarehouseModal({ request, isOpen, onClose, onComplete }: Warehou
 
                             {/* PO List */}
                             <div style={{ marginBottom: '3.5rem' }}>
-                                <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.1em', marginBottom: '1.25rem' }}>PO NUMBERS TO FETCH</p>
+                                <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.1em', marginBottom: '1.25rem' }}>SELECT PO NUMBERS TO COMPLETE</p>
                                 <div style={{
                                     display: 'flex',
                                     flexDirection: 'column',
-                                    gap: '1rem',
+                                    gap: '0.75rem',
                                     backgroundColor: 'rgba(255,255,255,0.02)',
-                                    padding: '1.5rem',
+                                    padding: '1.25rem',
                                     borderRadius: 'var(--radius-md)',
-                                    border: '1px solid var(--border-color)'
+                                    border: '1px solid var(--border-color)',
+                                    maxHeight: '200px',
+                                    overflowY: 'auto'
                                 }}>
-                                    {poList.map((po, index) => (
-                                        <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                            <div style={{
-                                                width: '24px',
-                                                height: '24px',
-                                                borderRadius: '50%',
-                                                border: '2px solid var(--accent-blue)',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                fontSize: '0.75rem',
-                                                fontWeight: 800,
-                                                color: 'var(--accent-blue)'
-                                            }}>
-                                                {index + 1}
+                                    {poList.map((po, index) => {
+                                        const isSelected = selectedPos.includes(po);
+                                        return (
+                                            <div
+                                                key={index}
+                                                onClick={() => togglePo(po)}
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'space-between',
+                                                    gap: '1rem',
+                                                    padding: '0.75rem 1rem',
+                                                    borderRadius: 'var(--radius-sm)',
+                                                    backgroundColor: isSelected ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
+                                                    border: `1px solid ${isSelected ? 'var(--accent-blue)' : 'transparent'}`,
+                                                    cursor: 'pointer',
+                                                    transition: 'all 0.2s ease'
+                                                }}
+                                            >
+                                                <span style={{ fontSize: '1.125rem', fontWeight: 800, color: isSelected ? 'var(--text-primary)' : 'var(--text-secondary)' }}>{po}</span>
+                                                <div style={{
+                                                    width: '24px',
+                                                    height: '24px',
+                                                    borderRadius: '6px',
+                                                    border: `2px solid ${isSelected ? 'var(--accent-blue)' : 'var(--border-color)'}`,
+                                                    backgroundColor: isSelected ? 'var(--accent-blue)' : 'transparent',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center'
+                                                }}>
+                                                    {isSelected && <CheckCircle size={16} color="white" />}
+                                                </div>
                                             </div>
-                                            <span style={{ fontSize: '1.125rem', fontWeight: 500 }}>{po}</span>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             </div>
 
@@ -160,14 +201,12 @@ export function WarehouseModal({ request, isOpen, onClose, onComplete }: Warehou
                             <motion.button
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
-                                onClick={() => {
-                                    onComplete(request.id);
-                                    onClose();
-                                }}
+                                onClick={handleConfirm}
+                                disabled={selectedPos.length === 0}
                                 style={{
                                     width: '100%',
                                     padding: '1.5rem',
-                                    backgroundColor: 'var(--accent-green)',
+                                    backgroundColor: selectedPos.length === 0 ? 'var(--border-color)' : 'var(--accent-green)',
                                     color: 'white',
                                     borderRadius: 'var(--radius-lg)',
                                     fontWeight: 900,
@@ -176,13 +215,15 @@ export function WarehouseModal({ request, isOpen, onClose, onComplete }: Warehou
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                     gap: '1rem',
-                                    boxShadow: '0 15px 30px -5px rgba(34, 197, 94, 0.4)',
+                                    boxShadow: selectedPos.length === 0 ? 'none' : '0 15px 30px -5px rgba(34, 197, 94, 0.4)',
                                     border: 'none',
-                                    cursor: 'pointer'
+                                    cursor: selectedPos.length === 0 ? 'not-allowed' : 'pointer'
                                 }}
                             >
                                 <CheckCircle size={28} />
-                                CONFIRM & COMPLETE
+                                {selectedPos.length === poList.length
+                                    ? 'CONFIRM & COMPLETE FULL'
+                                    : `COMPLETE ${selectedPos.length} PO(s)`}
                             </motion.button>
                         </div>
                     </motion.div>

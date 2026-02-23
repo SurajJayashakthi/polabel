@@ -71,25 +71,71 @@ export function useRequests() {
         }
     };
 
-    const completeRequest = async (id: string) => {
+    const completeRequest = async (id: string, completedPos?: string[]) => {
         const request = requests.find(r => r.id === id);
         if (!request) return;
+
+        const allPos = request.po_numbers.split(/[\s,]+/).filter(Boolean);
+        const finalCompletedPos = completedPos || allPos;
+        const remainingPos = allPos.filter(po => !finalCompletedPos.includes(po));
 
         const completedAt = new Date().toISOString();
         const durationSeconds = Math.floor((new Date(completedAt).getTime() - new Date(request.created_at).getTime()) / 1000);
 
-        const { error } = await supabase
-            .from('requests')
-            .update({
-                status: 'completed',
-                completed_at: completedAt,
-                duration_seconds: durationSeconds
-            })
-            .eq('id', id);
+        if (remainingPos.length === 0) {
+            // Full completion
+            const { error } = await supabase
+                .from('requests')
+                .update({
+                    status: 'completed',
+                    completed_at: completedAt,
+                    duration_seconds: durationSeconds,
+                    po_numbers: finalCompletedPos.join(', ') // Normalized
+                })
+                .eq('id', id);
 
-        if (error) {
-            console.error('Error completing request:', error);
+            if (error) console.error('Error completing request:', error);
+        } else {
+            // Partial completion - Split record
+            // 1. Create a completion record for finished items
+            const { error: insertError } = await supabase
+                .from('requests')
+                .insert({
+                    line_id: request.line_id,
+                    requested_by: request.requested_by,
+                    department: request.department,
+                    required_time: request.required_time,
+                    po_numbers: finalCompletedPos.join(', '),
+                    status: 'completed',
+                    created_at: request.created_at, // Preserve original start time for this record? 
+                    // User might want it to show how long THIS part took
+                    completed_at: completedAt,
+                    duration_seconds: durationSeconds
+                });
+
+            if (insertError) {
+                console.error('Error creating partial completion record:', insertError);
+                return;
+            }
+
+            // 2. Update original record to remove finished items
+            const { error: updateError } = await supabase
+                .from('requests')
+                .update({
+                    po_numbers: remainingPos.join(', ')
+                })
+                .eq('id', id);
+
+            if (updateError) console.error('Error updating original request:', updateError);
         }
+    };
+
+    const batchCompleteRequests = async (ids: string[]) => {
+        const requestsToComplete = requests.filter(r => ids.includes(r.id));
+        if (requestsToComplete.length === 0) return;
+
+        const updates = requestsToComplete.map(req => completeRequest(req.id));
+        await Promise.all(updates);
     };
 
     const resetSystem = async () => {
@@ -115,6 +161,7 @@ export function useRequests() {
         loading,
         updateRequestStatus,
         completeRequest,
+        batchCompleteRequests,
         resetSystem
     };
 }

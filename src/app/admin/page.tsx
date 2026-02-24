@@ -41,9 +41,10 @@ export default function AdminView() {
     };
 
     const formatDuration = (seconds?: number) => {
-        if (!seconds) return '--:--';
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
+        if (seconds === undefined || seconds === null) return '--:--';
+        const safeSeconds = Math.max(0, seconds);
+        const mins = Math.floor(safeSeconds / 60);
+        const secs = safeSeconds % 60;
         return `${mins}m ${secs}s`;
     };
 

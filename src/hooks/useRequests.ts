@@ -80,7 +80,7 @@ export function useRequests() {
         const remainingPos = allPos.filter(po => !finalCompletedPos.includes(po));
 
         const completedAt = new Date().toISOString();
-        const durationSeconds = Math.floor((new Date(completedAt).getTime() - new Date(request.created_at).getTime()) / 1000);
+        const durationSeconds = Math.max(0, Math.floor((new Date(completedAt).getTime() - new Date(request.created_at).getTime()) / 1000));
 
         if (remainingPos.length === 0) {
             // Full completion

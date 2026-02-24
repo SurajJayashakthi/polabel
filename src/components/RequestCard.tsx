@@ -17,7 +17,7 @@ function formatDuration(ms: number) {
         .join(":");
 }
 
-export function LiveStopwatch({ startTime, isRunning }: { startTime: string, isRunning: boolean }) {
+export function LiveStopwatch({ startTime, isRunning, serverOffset = 0 }: { startTime: string, isRunning: boolean, serverOffset?: number }) {
     const [duration, setDuration] = useState(0);
 
     useEffect(() => {
@@ -25,15 +25,18 @@ export function LiveStopwatch({ startTime, isRunning }: { startTime: string, isR
 
         const startObj = new Date(startTime).getTime();
 
-        // Initial calculate to prevent flash
-        setDuration(Date.now() - startObj);
+        const update = () => {
+            const now = Date.now() + serverOffset;
+            setDuration(now - startObj);
+        };
 
-        const interval = setInterval(() => {
-            setDuration(Date.now() - startObj);
-        }, 1000);
+        // Initial calculate to prevent flash
+        update();
+
+        const interval = setInterval(update, 1000);
 
         return () => clearInterval(interval);
-    }, [startTime, isRunning]);
+    }, [startTime, isRunning, serverOffset]);
 
     return (
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'monospace', fontSize: '1.1rem', fontWeight: 600 }}>
@@ -45,10 +48,12 @@ export function LiveStopwatch({ startTime, isRunning }: { startTime: string, isR
 
 export function RequestCard({
     request,
-    onUpdateStatus
+    onUpdateStatus,
+    serverOffset = 0
 }: {
     request: PORequest;
     onUpdateStatus: (id: string, status: PORequest['status']) => void;
+    serverOffset?: number;
 }) {
     return (
         <motion.div
@@ -76,7 +81,7 @@ export function RequestCard({
                 </div>
                 <div>
                     <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Downtime</p>
-                    <LiveStopwatch startTime={request.created_at} isRunning={request.status !== 'completed'} />
+                    <LiveStopwatch startTime={request.created_at} isRunning={request.status !== 'completed'} serverOffset={serverOffset} />
                 </div>
             </div>
 

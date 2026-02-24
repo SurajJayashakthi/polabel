@@ -8,7 +8,7 @@ import { Warehouse, Clock, AlertCircle, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function WarehouseView() {
-    const { activeRequests, loading, completeRequest, batchCompleteRequests } = useRequests();
+    const { activeRequests, loading, completeRequest, batchCompleteRequests, serverOffset } = useRequests();
     const [selectedRequest, setSelectedRequest] = useState<PORequest | null>(null);
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
@@ -170,6 +170,7 @@ export default function WarehouseView() {
                                 onClick={(request) => setSelectedRequest(request)}
                                 isSelected={selectedIds.includes(req.id)}
                                 onSelect={toggleSelection}
+                                serverOffset={serverOffset}
                             />
                         ))
                     )}
@@ -181,6 +182,7 @@ export default function WarehouseView() {
                 isOpen={!!selectedRequest}
                 onClose={() => setSelectedRequest(null)}
                 onComplete={completeRequest}
+                serverOffset={serverOffset}
             />
         </div>
     );

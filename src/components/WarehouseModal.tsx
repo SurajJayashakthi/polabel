@@ -2,15 +2,17 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Clock, Calendar, FileText, CheckCircle, AlertTriangle } from 'lucide-react';
 import { PORequest } from '@/hooks/useRequests';
+import { LiveStopwatch } from './RequestCard';
 
 interface WarehouseModalProps {
     request: PORequest | null;
     isOpen: boolean;
     onClose: () => void;
     onComplete: (id: string, completedPos: string[]) => Promise<void>;
+    serverOffset?: number;
 }
 
-export function WarehouseModal({ request, isOpen, onClose, onComplete }: WarehouseModalProps) {
+export function WarehouseModal({ request, isOpen, onClose, onComplete, serverOffset = 0 }: WarehouseModalProps) {
     const [selectedPos, setSelectedPos] = useState<string[]>([]);
 
     useEffect(() => {
@@ -144,6 +146,16 @@ export function WarehouseModal({ request, isOpen, onClose, onComplete }: Warehou
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontWeight: 600 }}>
                                         <Calendar size={18} color="var(--accent-blue)" />
                                         <span>{createdDate.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                                    </div>
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                    <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--accent-red)', letterSpacing: '0.1em' }}>ELAPSED DOWNTIME</p>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontWeight: 700, color: 'var(--accent-red)' }}>
+                                        <LiveStopwatch
+                                            startTime={request.created_at}
+                                            isRunning={true}
+                                            serverOffset={serverOffset}
+                                        />
                                     </div>
                                 </div>
                             </div>

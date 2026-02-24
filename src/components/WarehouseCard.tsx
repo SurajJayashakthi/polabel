@@ -10,30 +10,25 @@ interface WarehouseCardProps {
     onClick: (request: PORequest) => void;
     isSelected?: boolean;
     onSelect?: (id: string) => void;
+    serverOffset?: number;
 }
 
-export function WarehouseCard({ request, onClick, isSelected, onSelect }: WarehouseCardProps) {
+export function WarehouseCard({ request, onClick, isSelected, onSelect, serverOffset = 0 }: WarehouseCardProps) {
     const [secondsElapsed, setSecondsElapsed] = useState(0);
 
     useEffect(() => {
         const start = new Date(request.created_at).getTime();
         if (isNaN(start)) return;
 
-        const initialNow = Date.now();
-        // If the server timestamp is in the future (clock drift), 
-        // we compensate so the timer starts at 00:00:00 and counts up instantly.
-        const drift = start > initialNow ? (start - initialNow) : 0;
-        const adjustedStart = start - drift;
-
         const update = () => {
-            const now = Date.now();
-            setSecondsElapsed(Math.floor((now - adjustedStart) / 1000));
+            const now = Date.now() + serverOffset;
+            setSecondsElapsed(Math.floor((now - start) / 1000));
         };
 
         update();
         const interval = setInterval(update, 1000);
         return () => clearInterval(interval);
-    }, [request.created_at]);
+    }, [request.created_at, serverOffset]);
 
     const formatTime = (totalSeconds: number) => {
         const positiveSeconds = Math.max(0, totalSeconds);

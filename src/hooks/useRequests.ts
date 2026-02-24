@@ -19,8 +19,29 @@ export interface PORequest {
 export function useRequests() {
     const [requests, setRequests] = useState<PORequest[]>([]);
     const [loading, setLoading] = useState(true);
+    const [serverOffset, setServerOffset] = useState(0);
 
     useEffect(() => {
+        const syncTime = async () => {
+            try {
+                const startTime = Date.now();
+                const { data: serverTime, error } = await supabase.rpc('get_server_time');
+                const endTime = Date.now();
+
+                if (serverTime && !error) {
+                    // Estimate latency as half the round trip
+                    const latency = (endTime - startTime) / 2;
+                    const serverMs = new Date(serverTime).getTime();
+                    // serverOffset = (serverTime + latency) - localTime
+                    const offset = (serverMs + latency) - endTime;
+                    setServerOffset(offset);
+                }
+            } catch (err) {
+                console.error('Error syncing time:', err);
+            }
+        };
+
+        syncTime();
         fetchRequests();
 
         const subscription = supabase
@@ -79,8 +100,6 @@ export function useRequests() {
         const finalCompletedPos = completedPos || allPos;
         const remainingPos = allPos.filter(po => !finalCompletedPos.includes(po));
 
-        const completedAt = new Date().toISOString();
-        const durationSeconds = Math.max(0, Math.floor((new Date(completedAt).getTime() - new Date(request.created_at).getTime()) / 1000));
 
         if (remainingPos.length === 0) {
             // Full completion
@@ -88,8 +107,6 @@ export function useRequests() {
                 .from('requests')
                 .update({
                     status: 'completed',
-                    completed_at: completedAt,
-                    duration_seconds: durationSeconds,
                     po_numbers: finalCompletedPos.join(', ') // Normalized
                 })
                 .eq('id', id);
@@ -107,10 +124,7 @@ export function useRequests() {
                     required_time: request.required_time,
                     po_numbers: finalCompletedPos.join(', '),
                     status: 'completed',
-                    created_at: request.created_at, // Preserve original start time for this record? 
-                    // User might want it to show how long THIS part took
-                    completed_at: completedAt,
-                    duration_seconds: durationSeconds
+                    created_at: request.created_at
                 });
 
             if (insertError) {
@@ -159,6 +173,7 @@ export function useRequests() {
         activeRequests,
         completedRequests,
         loading,
+        serverOffset,
         updateRequestStatus,
         completeRequest,
         batchCompleteRequests,

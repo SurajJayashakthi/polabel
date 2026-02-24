@@ -6,7 +6,7 @@ import { AnimatePresence } from 'framer-motion';
 import { Clock } from 'lucide-react';
 
 export default function ActiveRequests() {
-    const { activeRequests, loading, updateRequestStatus } = useRequests();
+    const { activeRequests, loading, updateRequestStatus, serverOffset } = useRequests();
 
     if (loading) {
         return <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}>Loading active requests...</div>;
@@ -31,6 +31,7 @@ export default function ActiveRequests() {
                                 key={req.id}
                                 request={req}
                                 onUpdateStatus={updateRequestStatus}
+                                serverOffset={serverOffset}
                             />
                         ))
                     )}

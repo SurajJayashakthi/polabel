@@ -5,9 +5,10 @@ import { useRequests, PORequest } from '@/hooks/useRequests';
 import { LayoutDashboard, Trash2, RefreshCcw, CheckCircle, Clock, Package, AlertCircle, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { WarehouseModal } from '@/components/WarehouseModal';
+import { LiveStopwatch } from '@/components/RequestCard';
 
 export default function AdminView() {
-    const { activeRequests, completedRequests, loading, resetSystem, completeRequest, batchCompleteRequests } = useRequests();
+    const { activeRequests, completedRequests, loading, resetSystem, completeRequest, batchCompleteRequests, serverOffset } = useRequests();
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [modalRequest, setModalRequest] = useState<PORequest | null>(null);
 
@@ -159,6 +160,13 @@ export default function AdminView() {
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                         <div style={{ textAlign: 'right' }}>
+                                            <div style={{ marginBottom: '0.25rem' }}>
+                                                <LiveStopwatch
+                                                    startTime={req.created_at}
+                                                    isRunning={true}
+                                                    serverOffset={serverOffset}
+                                                />
+                                            </div>
                                             {req.status === 'pending' ? (
                                                 <span className="badge pending">Pending</span>
                                             ) : (
@@ -224,6 +232,7 @@ export default function AdminView() {
                 isOpen={!!modalRequest}
                 onClose={() => setModalRequest(null)}
                 onComplete={completeRequest}
+                serverOffset={serverOffset}
             />
 
             <footer style={{ marginTop: '4rem', textAlign: 'center', opacity: 0.4 }}>
